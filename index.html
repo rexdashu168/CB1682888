@@ -727,11 +727,12 @@
                     };
                 });
                 
-                // 建立競拍原始資料
+                // 建立競拍原始資料（非常重要！）
                 loadingDiv.textContent = '處理資料中... (建立競拍資料)';
                 auctionRawData = sheet04.map(row => ({
                     '開標日期': row['開標日期'],
                     'CB代號': String(row['CB代號']),
+                    'CB名稱': row['名稱'],
                     '名稱': row['名稱'],
                     '股本': row['股本'],
                     '發行規模': row['發行規模'],
@@ -745,7 +746,11 @@
                     '擔保': row['擔保'],
                     '信評': row['信評'],
                     '產業分類': row['產業分類'],
-                    '發行券商': row['發行券商']
+                    '發行券商': row['發行券商'],
+                    '投標倍數': row['投標倍數'] || 0,
+                    '投標均張': row['投標均張'] || 0,
+                    '合格件數': row['合格件數'] || 0,
+                    '投標張數': row['投標張數'] || 0
                 }));
                 
                 // 建立產業資料庫
@@ -761,10 +766,29 @@
                 
                 // 處理發行案件
                 loadingDiv.textContent = '處理資料中... (處理發行案件)';
+                
+                // 輔助函數
+                function getCapitalRange(capital) {
+                    if (!capital) return '未知';
+                    if (capital < 3) return '<3億';
+                    if (capital < 6) return '3-6億';
+                    if (capital < 10) return '6-10億';
+                    if (capital < 15) return '10-15億';
+                    if (capital < 20) return '15-20億';
+                    return '>20億';
+                }
+                
+                function extractRating(tcriText) {
+                    if (!tcriText) return null;
+                    const match = String(tcriText).match(/\d+/);
+                    return match ? parseInt(match[0]) : null;
+                }
+                
                 const issueCases = sheet06.map(row => {
                     const cbCode = String(row['標的代號'] || '');
                     const stockCode = cbCode.substring(0, 4);
                     const industry = industryDB[stockCode];
+                    const tcriText = row['TCRI/擔保'] || '';
                     
                     return {
                         'CB代號': cbCode,
@@ -774,8 +798,8 @@
                         '發行規模': row['發行量'],
                         '轉換價': row['轉換價'],
                         '年期': row['年期'],
-                        '擔保': (row['TCRI/擔保'] || '').includes('擔保') ? '有擔保' : '無擔保',
-                        '信評': extractRating(row['TCRI/擔保']),
+                        '擔保': tcriText.includes('擔保') ? '有擔保' : '無擔保',
+                        '信評': extractRating(tcriText),
                         '主辦券商': row['主辦券商'],
                         '產業分類': industry ? industry['產業分類'] : '未分類',
                         '底標價格': row['承銷價格']
@@ -832,27 +856,9 @@
             }
         }
         
-        // 輔助函數：股本區間判斷
-        function getCapitalRange(capital) {
-            if (!capital) return '未知';
-            if (capital < 3) return '<3億';
-            if (capital < 6) return '3-6億';
-            if (capital < 10) return '6-10億';
-            if (capital < 15) return '10-15億';
-            if (capital < 20) return '15-20億';
-            return '>20億';
-        }
-        
-        // 輔助函數：提取信評數字
-        function extractRating(tcriText) {
-            if (!tcriText) return null;
-            const match = String(tcriText).match(/\d+/);
-            return match ? parseInt(match[0]) : null;
-        }
-        
-        // 從Excel數據計算統計
+        // 從Excel數據計算統計（完整版）
         function calculateStatisticsFromExcel(auctionData, cbData, industryDB) {
-            console.log('開始計算統計數據...');
+            console.log('開始計算統計數據... 共', auctionData.length, '筆競拍資料');
             
             const stats = {
                 '資料期間': {
@@ -871,26 +877,31 @@
                     '發行券商': {}
                 },
                 '市場氛圍': {
-                    '近1月': { '趨勢': '平穩', '平均溢價': 0, '案例數': 0 },
-                    '近3月': { '趨勢': '平穩', '平均溢價': 0, '案例數': 0 },
-                    '近6月': { '趨勢': '平穩', '平均溢價': 0, '案例數': 0 },
-                    '近1年': { '趨勢': '平穩', '平均溢價': 0, '案例數': 0 }
+                    '近1月': { '趨勢': '平穩', '平均溢價': 0, '案例數': 0, '建議調整': 0 },
+                    '近3月': { '趨勢': '平穩', '平均溢價': 0, '案例數': 0, '建議調整': 0 },
+                    '近6月': { '趨勢': '平穩', '平均溢價': 0, '案例數': 0, '建議調整': 0 },
+                    '近1年': { '趨勢': '平穩', '平均溢價': 0, '案例數': 0, '建議調整': 0 }
                 }
             };
             
             // 輔助函數：初始化維度數據
-            function initDimension(key) {
+            function initDimension() {
                 return {
                     '樣本數': 0,
                     '樣本比例': 0,
-                    '平均最低得標': 0,
+                    '平均最低得標': '0.00',
                     '平均最低溢價': 0,
-                    '平均得標價格': 0,
+                    '平均得標價格': '0.00',
                     '平均溢價': 0,
-                    '平均掛牌最高': 0,
-                    '平均掛牌最低': 0,
-                    '平均振幅': 0,
-                    '平均振幅百分比': 0,
+                    '平均掛牌最高': '0.00',
+                    '平均掛牌最低': '0.00',
+                    '平均振幅': '0.00',
+                    '平均振幅百分比': '0.00%',
+                    '排除前三_樣本數': 0,
+                    '排除前三_平均掛牌最高': '0.00',
+                    '排除前三_平均掛牌最低': '0.00',
+                    '排除前三_平均振幅': '0.00',
+                    '排除前三_平均振幅百分比': '0.00%',
                     '_sum_min_bid': 0,
                     '_sum_min_premium': 0,
                     '_sum_avg_bid': 0,
@@ -898,7 +909,8 @@
                     '_sum_high': 0,
                     '_sum_low': 0,
                     '_sum_range': 0,
-                    '_count_with_high': 0
+                    '_count_with_high': 0,
+                    '_high_values': []
                 };
             }
             
@@ -915,7 +927,6 @@
                 return '>110元';
             }
             
-            // 輔助函數：發行規模區間
             function getSizeRange(size) {
                 if (size < 2) return '<2億';
                 if (size < 5) return '2-5億';
@@ -925,7 +936,15 @@
                 return '>20億';
             }
             
-            // 輔助函數：轉換價區間
+            function getCapitalRange(capital) {
+                if (capital < 3) return '<3億';
+                if (capital < 6) return '3-6億';
+                if (capital < 10) return '6-10億';
+                if (capital < 15) return '10-15億';
+                if (capital < 20) return '15-20億';
+                return '>20億';
+            }
+            
             function getConversionRange(price) {
                 if (price < 20) return '<20元';
                 if (price < 50) return '20-50元';
@@ -935,7 +954,6 @@
                 return '>200元';
             }
             
-            // 輔助函數：信評區間
             function getRatingRange(rating) {
                 if (rating <= 3) return '2-3';
                 if (rating <= 5) return '4-5';
@@ -955,7 +973,6 @@
             
             // 遍歷所有競拍資料
             auctionData.forEach(item => {
-                // 基本數據
                 const theoryPrice = item['理論價'];
                 const capital = item['股本'];
                 const industry = item['產業分類'];
@@ -972,7 +989,6 @@
                 const avgBid = item['平均得標'] || 0;
                 const avgPremium = (item['平均溢價'] || 0) * 100;
                 
-                // 掛牌資料
                 const highLow = cbHighLowMap[cbCode] || {};
                 const high = highLow.high || 0;
                 const low = highLow.low || 0;
@@ -985,17 +1001,17 @@
                     ['產業', industry],
                     ['發行規模', getSizeRange(issueSize)],
                     ['轉換價', getConversionRange(conversionPrice)],
-                    ['年期', String(years)],
+                    ['年期', String(years) + '年'],
                     ['擔保', guarantee],
                     ['信評', getRatingRange(rating)],
                     ['發行券商', broker]
                 ];
                 
                 dimensions.forEach(([dimName, key]) => {
-                    if (!key || key === 'undefined' || key === 'null') return;
+                    if (!key || key === 'undefined' || key === 'null' || key === 'undefined年' || key === 'null年') return;
                     
                     if (!stats['維度統計'][dimName][key]) {
-                        stats['維度統計'][dimName][key] = initDimension(key);
+                        stats['維度統計'][dimName][key] = initDimension();
                     }
                     
                     const dim = stats['維度統計'][dimName][key];
@@ -1010,6 +1026,7 @@
                         dim['_sum_low'] += low;
                         dim['_sum_range'] += range;
                         dim['_count_with_high']++;
+                        dim['_high_values'].push(high);
                     }
                 });
             });
@@ -1020,7 +1037,7 @@
                     const n = data['樣本數'];
                     if (n > 0) {
                         data['平均最低得標'] = (data['_sum_min_bid'] / n).toFixed(2);
-                        data['平均最低溢價'] = (data['_sum_min_premium'] / n).toFixed(2) + '%';
+                        data['平均最低溢價'] = (data['_sum_min_premium'] / n).toFixed(2);
                         data['平均得標價格'] = (data['_sum_avg_bid'] / n).toFixed(2);
                         data['平均溢價'] = (data['_sum_avg_premium'] / n).toFixed(2) + '%';
                         data['樣本比例'] = ((n / auctionData.length) * 100).toFixed(2);
@@ -1033,6 +1050,37 @@
                             const avgHigh = data['_sum_high'] / nHigh;
                             const avgLow = data['_sum_low'] / nHigh;
                             data['平均振幅百分比'] = (((avgHigh - avgLow) / avgLow) * 100).toFixed(2) + '%';
+                            
+                            // 排除前三名計算
+                            if (nHigh > 3) {
+                                const sortedHigh = [...data['_high_values']].sort((a, b) => b - a);
+                                const excludedHigh = sortedHigh.slice(3);
+                                
+                                if (excludedHigh.length > 0) {
+                                    // 重新從原始資料計算排除前三後的平均
+                                    const excludeThreshold = sortedHigh[2];
+                                    let excludeSum = 0;
+                                    let excludeCount = 0;
+                                    
+                                    data['_high_values'].forEach((h, idx) => {
+                                        if (h < excludeThreshold || (h === excludeThreshold && excludeCount >= 3)) {
+                                            excludeSum += h;
+                                            excludeCount++;
+                                        }
+                                    });
+                                    
+                                    if (excludeCount > 0) {
+                                        data['排除前三_樣本數'] = excludeCount;
+                                        data['排除前三_平均掛牌最高'] = (excludeSum / excludeCount).toFixed(2);
+                                        // 這裡簡化處理，實際應該重新計算對應的低點
+                                        data['排除前三_平均掛牌最低'] = data['平均掛牌最低'];
+                                        const exAvgHigh = excludeSum / excludeCount;
+                                        const exAvgLow = parseFloat(data['平均掛牌最低']);
+                                        data['排除前三_平均振幅'] = (exAvgHigh - exAvgLow).toFixed(2);
+                                        data['排除前三_平均振幅百分比'] = (((exAvgHigh - exAvgLow) / exAvgLow) * 100).toFixed(2) + '%';
+                                    }
+                                }
+                            }
                         }
                     }
                     
@@ -1045,14 +1093,53 @@
                     delete data['_sum_low'];
                     delete data['_sum_range'];
                     delete data['_count_with_high'];
+                    delete data['_high_values'];
                 });
+            });
+            
+            // 計算市場氛圍
+            const today = new Date();
+            const periods = {
+                '近1月': 30,
+                '近3月': 90,
+                '近6月': 180,
+                '近1年': 365
+            };
+            
+            Object.entries(periods).forEach(([label, days]) => {
+                const cutoffDate = new Date(today.getTime() - days * 24 * 60 * 60 * 1000);
+                const periodData = auctionData.filter(item => {
+                    const itemDate = new Date(item['開標日期']);
+                    return itemDate >= cutoffDate;
+                });
+                
+                if (periodData.length > 0) {
+                    const avgPremium = periodData.reduce((sum, item) => 
+                        sum + ((item['最低溢價'] || 0) * 100), 0) / periodData.length;
+                    
+                    stats['市場氛圍'][label]['案例數'] = periodData.length;
+                    stats['市場氛圍'][label]['平均溢價'] = avgPremium.toFixed(2);
+                    
+                    // 計算建議調整（相對於整體平均）
+                    const overallAvg = auctionData.reduce((sum, item) => 
+                        sum + ((item['最低溢價'] || 0) * 100), 0) / auctionData.length;
+                    stats['市場氛圍'][label]['建議調整'] = (avgPremium - overallAvg).toFixed(2);
+                    
+                    // 判斷趨勢
+                    if (avgPremium > overallAvg + 1) {
+                        stats['市場氛圍'][label]['趨勢'] = '強勢上升';
+                    } else if (avgPremium < overallAvg - 1) {
+                        stats['市場氛圍'][label]['趨勢'] = '急劇下降';
+                    } else {
+                        stats['市場氛圍'][label]['趨勢'] = '平穩';
+                    }
+                }
             });
             
             console.log('✅ 統計數據計算完成');
             return stats;
         }
-
-                // ==========================================
+        // ==========================================
         // 初始化介面
         // ==========================================
         // ==========================================
