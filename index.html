@@ -371,81 +371,61 @@
             }
         }
     
-        /* 發行條件卡片樣式 */
-        
-        .condition-card {
+        /* 發行條件方塊樣式 */
+        .condition-box {
             background: white;
-            padding: 12px;
-            border-radius: 8px;
             border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 12px;
             transition: all 0.3s;
             position: relative;
         }
         
-        .condition-card:hover {
+        .condition-box:hover {
             border-color: #667eea;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
         }
         
-        .condition-card label {
-            display: block;
+        .box-label {
             font-size: 13px;
             font-weight: 600;
-            color: #555;
-            margin-bottom: 6px;
+            color: #666;
+            margin-bottom: 8px;
+            text-align: center;
         }
         
-        .condition-card select,
-        .condition-card input {
+        .box-input {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 14px;
+            text-align: center;
+            transition: all 0.3s;
         }
         
-        .condition-card select:focus,
-        .condition-card input:focus {
+        .box-input:focus {
             outline: none;
             border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-
-
-        /* 響應式設計：小螢幕改為上下排列 */
+        
+        /* 響應式 */
         @media (max-width: 1024px) {
             .input-panel form > div[style*="grid-template-columns: 1fr 1fr"] {
                 grid-template-columns: 1fr !important;
             }
-            
-            .condition-card[style*="grid-column: span 2"] {
-                grid-column: span 3 !important;
-            }
         }
         
         @media (max-width: 768px) {
-            
-        .condition-card {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            border: 2px solid #e0e0e0;
-            transition: all 0.3s;
-            position: relative;
-        }
-            
             [style*="grid-template-columns: repeat(3, 1fr)"] {
                 grid-template-columns: 1fr !important;
             }
-        }
-
-
-        /* 發行條件內的info-box樣式優化 */
-        .condition-card .info-box {
-            position: absolute;
-            z-index: 100;
-            margin-top: 5px;
-            min-width: 250px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            
+            .condition-box[style*="grid-column: span 2"] {
+                grid-column: span 1 !important;
+            }
         }
 
 </style>
@@ -493,16 +473,16 @@
                 <h2>📋 輸入標的資料</h2>
 
                 <form id="evaluationForm">
-                    <!-- 左右分欄容器 -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <!-- 兩欄佈局 -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
                         
-                        <!-- 左側：基本資料 + 競拍資料 + 市場氛圍 -->
+                        <!-- ==================== 左側 ==================== -->
                         <div>
                             <!-- 基本資料 -->
                             <div class="form-section">
                                 <h3>📌 基本資料</h3>
                                 
-                                <!-- 快速載入（保留在最上方） -->
+                                <!-- 快速載入發行案件 -->
                                 <div class="form-group" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                                     <label style="color: white; font-weight: bold; margin-bottom: 8px; display: block;">⚡ 快速載入發行案件</label>
                                     <select id="quickLoad" style="width: 100%; padding: 10px; border-radius: 5px; border: none; font-size: 14px;">
@@ -561,24 +541,24 @@
                             <!-- 近期市場競拍氛圍 -->
                             <div class="form-section">
                                 <h3>📊 近期市場競拍氛圍</h3>
-                                <div id="marketSentiment" style="padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 14px;">
+                                <div id="marketSentiment" style="padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 14px; min-height: 150px;">
                                     <div style="color: #666;">請選擇發行條件後，系統將自動顯示市場氛圍...</div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 右側：發行條件 3x3 -->
+                        <!-- ==================== 右側：發行條件 3x3 ==================== -->
                         <div>
                             <div class="form-section">
                                 <h3>🔥 發行條件</h3>
                                 
                                 <!-- 3x3 網格 -->
-                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 15px;">
                                     
-                                    <!-- 第1格：股本 -->
-                                    <div class="condition-card">
-                                        <label>股本</label>
-                                        <select id="capital" required>
+                                    <!-- 1. 股本 -->
+                                    <div class="condition-box">
+                                        <div class="box-label">股本</div>
+                                        <select id="capital" class="box-input" required>
                                             <option value="">請選擇</option>
                                             <option value="<3億">&lt;3億</option>
                                             <option value="3-6億">3-6億</option>
@@ -587,98 +567,115 @@
                                             <option value="15-20億">15-20億</option>
                                             <option value=">20億">&gt;20億</option>
                                         </select>
-                                        <div id="capitalInfo" class="info-box" style="display: none;">
-                                            <div class="content" id="capitalStats"></div>
-                                        </div>
                                     </div>
 
-                                    <!-- 第2格：產業分類 -->
-                                    <div class="condition-card">
-                                        <label>產業分類</label>
-                                        <select id="industry" required>
-                                            <option value="">請選擇</option>
-                                        </select>
-                                        <div id="industryInfo" class="info-box" style="display: none;">
-                                            <div class="content" id="industryStats"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- 第3格：發行券商 -->
-                                    <div class="condition-card">
-                                        <label>發行券商</label>
-                                        <select id="broker">
+                                    <!-- 2. 產業分類 -->
+                                    <div class="condition-box">
+                                        <div class="box-label">產業分類</div>
+                                        <select id="industry" class="box-input" required>
                                             <option value="">請選擇</option>
                                         </select>
                                     </div>
 
-                                    <!-- 第4格：發行規模 -->
-                                    <div class="condition-card">
-                                        <label>發行規模(億)</label>
-                                        <input type="number" id="issueSize" step="0.1" placeholder="發行規模" required>
-                                        <div id="sizeInfo" class="info-box" style="display: none;">
-                                            <div class="content" id="sizeStats"></div>
-                                        </div>
+                                    <!-- 3. 發行券商 -->
+                                    <div class="condition-box">
+                                        <div class="box-label">發行券商</div>
+                                        <select id="broker" class="box-input">
+                                            <option value="">請選擇</option>
+                                        </select>
                                     </div>
 
-                                    <!-- 第5格：年期 -->
-                                    <div class="condition-card">
-                                        <label>年期</label>
-                                        <select id="years" required>
+                                    <!-- 4. 發行規模 -->
+                                    <div class="condition-box">
+                                        <div class="box-label">發行規模(億)</div>
+                                        <input type="number" id="issueSize" class="box-input" step="0.1" placeholder="0.0" required>
+                                    </div>
+
+                                    <!-- 5. 年期 -->
+                                    <div class="condition-box">
+                                        <div class="box-label">年期</div>
+                                        <select id="years" class="box-input" required>
                                             <option value="">請選擇</option>
                                             <option value="3">3年</option>
                                             <option value="5">5年</option>
                                             <option value="7">7年</option>
                                         </select>
-                                        <div id="yearsInfo" class="info-box" style="display: none;">
-                                            <div class="content" id="yearsStats"></div>
-                                        </div>
                                     </div>
 
-                                    <!-- 第6格：擔保 -->
-                                    <div class="condition-card">
-                                        <label>擔保</label>
-                                        <select id="guarantee" required>
+                                    <!-- 6. 擔保 -->
+                                    <div class="condition-box">
+                                        <div class="box-label">擔保</div>
+                                        <select id="guarantee" class="box-input" required>
                                             <option value="">請選擇</option>
                                             <option value="有擔保">有擔保</option>
                                             <option value="無擔保">無擔保</option>
                                         </select>
-                                        <div id="guaranteeInfo" class="info-box" style="display: none;">
-                                            <div class="content" id="guaranteeStats"></div>
-                                        </div>
                                     </div>
 
-                                    <!-- 第7格：信評 -->
-                                    <div class="condition-card">
-                                        <label>信評(TCRI)</label>
-                                        <select id="rating" required>
+                                    <!-- 7. 信評 -->
+                                    <div class="condition-box">
+                                        <div class="box-label">信評(TCRI)</div>
+                                        <select id="rating" class="box-input" required>
                                             <option value="">請選擇</option>
                                             <option value="2-3">2-3</option>
                                             <option value="4-5">4-5</option>
                                             <option value="6-7">6-7</option>
                                             <option value="8-9">8-9</option>
                                         </select>
-                                        <div id="ratingInfo" class="info-box" style="display: none;">
-                                            <div class="content" id="ratingStats"></div>
-                                        </div>
                                     </div>
 
-                                    <!-- 第8格：智慧提醒 -->
-                                    <div class="condition-card" style="grid-column: span 2;">
-                                        <div id="smartReminders" style="padding: 12px; background: #e3f2fd; border-radius: 8px; min-height: 80px;">
-                                            <div style="font-weight: bold; color: #1976D2; margin-bottom: 8px;">💡 智慧提醒</div>
-                                            <div id="smartReminderContent" style="font-size: 13px; color: #555;">
+                                    <!-- 8-9. 智慧提醒 (佔2格) -->
+                                    <div class="condition-box" style="grid-column: span 2; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-color: #2196F3;">
+                                        <div style="padding: 10px;">
+                                            <div style="font-weight: bold; color: #1976D2; font-size: 13px; margin-bottom: 6px;">💡 智慧提醒</div>
+                                            <div id="smartReminderContent" style="font-size: 12px; color: #555;">
                                                 請填寫競拍資料後，系統將提供智慧建議...
                                             </div>
                                         </div>
                                     </div>
 
                                 </div>
-                            </div>
-
-                            <!-- 產業資訊提示 -->
-                            <div id="industryInfoBox" class="info-box" style="display: none; margin-top: 15px;">
-                                <div class="title">🏢 產業資訊</div>
-                                <div class="content" id="industryInfoContent"></div>
+                                
+                                <!-- 統計資訊框 -->
+                                <div id="capitalInfo" class="info-box" style="display: none; margin-bottom: 10px;">
+                                    <div class="title">📊 股本統計</div>
+                                    <div class="content" id="capitalStats"></div>
+                                </div>
+                                
+                                <div id="industryInfo" class="info-box" style="display: none; margin-bottom: 10px;">
+                                    <div class="title">📊 產業統計</div>
+                                    <div class="content" id="industryStats"></div>
+                                </div>
+                                
+                                <div id="sizeInfo" class="info-box" style="display: none; margin-bottom: 10px;">
+                                    <div class="title">📊 規模統計</div>
+                                    <div class="content" id="sizeStats"></div>
+                                </div>
+                                
+                                <div id="yearsInfo" class="info-box" style="display: none; margin-bottom: 10px;">
+                                    <div class="title">📊 年期統計</div>
+                                    <div class="content" id="yearsStats"></div>
+                                </div>
+                                
+                                <div id="guaranteeInfo" class="info-box" style="display: none; margin-bottom: 10px;">
+                                    <div class="title">📊 擔保統計</div>
+                                    <div class="content" id="guaranteeStats"></div>
+                                </div>
+                                
+                                <div id="ratingInfo" class="info-box" style="display: none; margin-bottom: 10px;">
+                                    <div class="title">📊 信評統計</div>
+                                    <div class="content" id="ratingStats"></div>
+                                </div>
+                                
+                                <div id="industryInfoBox" class="info-box" style="display: none;">
+                                    <div class="title">🏢 產業資訊</div>
+                                    <div class="content" id="industryInfoContent"></div>
+                                </div>
+                                
+                                <div id="smartReminders" style="display: none; padding: 12px; background: #fff3e0; border-radius: 8px; border-left: 4px solid #ff9800;">
+                                    <div style="font-weight: bold; color: #e65100; margin-bottom: 8px;">⚠️ 智慧提醒</div>
+                                    <div id="smartReminderDetail" style="font-size: 13px; color: #555;"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
