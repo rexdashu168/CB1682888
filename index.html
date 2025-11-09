@@ -588,20 +588,51 @@
         async function loadExternalData() {
             try {
                 console.log('開始載入 data.json...');
-                const response = await fetch('data.json');
+                const loadingText = document.getElementById('loadingText');
+                const loadingDetail = document.getElementById('loadingDetail');
+                if (loadingText) loadingText.textContent = '正在載入資料檔案...';
+                // 嘗試多個可能的路徑
+                const possiblePaths = [
+                    'data.json',           // 同目錄
+                    './data.json',         // 明確的相對路徑
+                    '/data.json'           // 根目錄
+                ];
                 
-                if (!response.ok) {
-                    throw new Error('HTTP error! status: ' + response.status);
+                let response = null;
+                let lastError = null;
+                
+                for (const path of possiblePaths) {
+                    try {
+                        console.log('嘗試載入:', path);
+                        response = await fetch(path);
+                        if (response.ok) {
+                            console.log('✅ 成功:', path);
+                            break;
+                        }
+                    } catch (e) {
+                        console.log('❌ 失敗:', path, e.message);
+                        lastError = e;
+                    }
+                }
+                
+                if (!response || !response.ok) {
+                    const errorMsg = response 
+                        ? `HTTP ${response.status}: ${response.statusText}` 
+                        : '無法連接到 data.json';
+                    throw new Error(errorMsg);
                 }
                 
                 const rawData = await response.json();
                 console.log('✅ data.json 載入成功');
+                if (loadingText) loadingText.textContent = '資料載入成功，正在處理...';
+                if (loadingDetail) loadingDetail.textContent = '解析資料中...';
                 
                 // 轉換資料格式
                 RESEARCH_DATA = convertRawData(rawData);
                 dataLoaded = true;
                 
                 console.log('✅ 資料轉換完成');
+                if (loadingText) loadingText.textContent = '準備完成！';
                 console.log('   公司數:', Object.keys(RESEARCH_DATA.companies).length);
                 console.log('   報告數:', RESEARCH_DATA.stats.total_reports);
                 
