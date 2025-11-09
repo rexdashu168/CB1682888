@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 台股AI智能查詢系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 載入畫面 */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #667eea;
+        }
+
+        /* 頭部 */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* 搜尋 */
+        .search-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* 結果區 */
+        .result-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .result-container.show {
+            display: block;
+        }
+
+        .company-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .company-info {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* 維度導航 */
+        .dimension-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .dimension-btn {
+            padding: 10px 20px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .dimension-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .dimension-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        /* 內容區 */
+        .content-area {
+            padding: 20px;
+            min-height: 200px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .content-card {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .data-item {
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .data-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .data-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 載入畫面 -->
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在載入資料...</div>
+    </div>
+
+    <div class="container">
+        <!-- 頭部 -->
+        <div class="header">
+            <h1>🎯 台股AI智能查詢系統</h1>
+            <div class="subtitle">2269家上市櫃 | 66篇深度報告 | 1021家CB完整資訊 | 297家CB競拍完整資訊</div>
+        </div>
+
+        <!-- 搜尋 -->
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchInput" placeholder="輸入股票代號或公司名稱（如：2330 或 台積電）">
+        </div>
+
+        <!-- 結果區 -->
+        <div class="result-container" id="resultContainer">
+            <div class="company-header" id="companyHeader"></div>
+            
+            <div class="dimension-nav">
+                <button class="dimension-btn active" data-dim="overview">📋 公司總覽</button>
+                <button class="dimension-btn" data-dim="finance">💰 財務表現</button>
+                <button class="dimension-btn" data-dim="products">📦 產品結構</button>
+                <button class="dimension-btn" data-dim="reports">📊 研究報告</button>
+                <button class="dimension-btn" data-dim="cb">🎯 可轉債</button>
+                <button class="dimension-btn" data-dim="timeline">⏰ 關鍵時程</button>
+            </div>
+
+            <div class="content-area" id="contentArea"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全域變數
+        let allData = null;
+        let currentCompany = null;
+
+        // 載入資料
+        async function loadData() {
+            try {
+                const response = await fetch('data.json');
+                if (!response.ok) {
+                    throw new Error('無法載入資料檔案');
+                }
+                allData = await response.json();
+                
+                // 隱藏載入畫面
+                document.getElementById('loading').style.display = 'none';
+                
+                console.log('資料載入完成！');
+                console.log('研究報告:', allData.reports.length);
+                console.log('公司資料:', allData.companies.length);
+                console.log('CB資料:', allData.cb.current.length);
+                
+            } catch (error) {
+                console.error('載入資料失敗:', error);
+                document.getElementById('loading').innerHTML = `
+                    <div style="color: red;">❌ 資料載入失敗</div>
+                    <div style="margin-top: 10px; font-size: 14px;">請確認 data.json 檔案是否存在</div>
+                `;
+            }
+        }
+
+        // 搜尋功能
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            if (query.length === 0) {
+                document.getElementById('resultContainer').classList.remove('show');
+                return;
+            }
+
+            // 搜尋公司
+            const company = searchCompany(query);
+            if (company) {
+                displayCompany(company);
+            }
+        });
+
+        // 搜尋公司
+        function searchCompany(query) {
+            if (!allData) return null;
+            
+            return allData.companies.find(c => 
+                c['股票代號'] === query || 
+                c['公司簡稱']?.includes(query) ||
+                c['公司名稱']?.includes(query)
+            );
+        }
+
+        // 顯示公司資訊
+        function displayCompany(company) {
+            currentCompany = company;
+            
+            // 顯示結果區
+            document.getElementById('resultContainer').classList.add('show');
+            
+            // 更新公司標頭
+            const header = document.getElementById('companyHeader');
+            header.innerHTML = `
+                <div class="company-name">${company['股票代號']} ${company['公司簡稱'] || company['公司名稱']}</div>
+                <div class="company-info">${company['產業別']} | ${company['董事長']} | ${company['總經理']}</div>
+            `;
+            
+            // 顯示公司總覽
+            showOverview(company);
+            
+            // 綁定維度按鈕
+            bindDimensionButtons();
+        }
+
+        // 顯示公司總覽
+        function showOverview(company) {
+            const content = document.getElementById('contentArea');
+            content.innerHTML = `
+                <div class="section-title">基本資料</div>
+                <div class="data-grid">
+                    <div class="data-item">
+                        <div class="data-label">產業別</div>
+                        <div class="data-value">${company['產業別'] || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">董事長</div>
+                        <div class="data-value">${company['董事長'] || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">總經理</div>
+                        <div class="data-value">${company['總經理'] || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">股本(億)</div>
+                        <div class="data-value">${company['股本(億)'] || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">市值(億)</div>
+                        <div class="data-value">${company['市值(億)'] || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">產業分類</div>
+                        <div class="data-value">${company['產業分類'] || '-'}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 顯示可轉債資訊
+        function showCB(company) {
+            const stockCode = company['股票代號'];
+            
+            // 找出該公司的CB資料
+            const currentCBs = allData.cb.current.filter(cb => 
+                cb['轉換標的代碼'] && cb['轉換標的代碼'].toString() === stockCode
+            );
+            
+            const historyCBs = allData.cb.history.filter(cb => 
+                cb['股票代號'] && cb['股票代號'].toString() === stockCode
+            );
+            
+            const bidCBs = allData.cb.bid.filter(cb => 
+                cb['股票代號'] && cb['股票代號'].toString() === stockCode
+            );
+            
+            const content = document.getElementById('contentArea');
+            
+            if (currentCBs.length === 0 && historyCBs.length === 0 && bidCBs.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🎯</div>
+                        <div>該公司無可轉債發行紀錄</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            // 目前掛牌中
+            if (currentCBs.length > 0) {
+                html += `<div class="section-title">🔥 目前掛牌中（${currentCBs.length} 檔）</div>`;
+                currentCBs.forEach(cb => {
+                    html += `
+                        <div class="content-card" style="background: #e8f5e9; border-left-color: #66bb6a;">
+                            <div style="font-weight: bold; color: #2e7d32; margin-bottom: 10px;">
+                                ${cb['代號']} ${cb['名稱']}
+                            </div>
+                            <div class="data-grid">
+                                ${cb['轉換價格(元)'] ? `<div class="data-item"><div class="data-label">轉換價</div><div class="data-value">${cb['轉換價格(元)']} 元</div></div>` : ''}
+                                ${cb['實際發行總額(百萬)'] ? `<div class="data-item"><div class="data-label">發行額</div><div class="data-value">${cb['實際發行總額(百萬)']} 百萬</div></div>` : ''}
+                                ${cb['最新餘額(百萬)'] ? `<div class="data-item"><div class="data-label">餘額</div><div class="data-value">${cb['最新餘額(百萬)']} 百萬</div></div>` : ''}
+                                ${cb['還本年限'] ? `<div class="data-item"><div class="data-label">年期</div><div class="data-value">${cb['還本年限']} 年</div></div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // 競拍資料
+            if (bidCBs.length > 0) {
+                html += `<div class="section-title">📊 競拍資料（${bidCBs.length} 次）</div>`;
+                bidCBs.forEach(bid => {
+                    html += `
+                        <div class="content-card">
+                            <div style="font-weight: bold; color: #667eea; margin-bottom: 10px;">
+                                ${bid['名稱']} - ${bid['開標日期'] || ''}
+                            </div>
+                            <div class="data-grid">
+                                ${bid['發行規模'] ? `<div class="data-item"><div class="data-label">發行規模</div><div class="data-value">${bid['發行規模']}</div></div>` : ''}
+                                ${bid['轉換價'] ? `<div class="data-item"><div class="data-label">轉換價</div><div class="data-value">${bid['轉換價']} 元</div></div>` : ''}
+                                ${bid['最低得標'] ? `<div class="data-item"><div class="data-label">最低得標</div><div class="data-value">${bid['最低得標']}</div></div>` : ''}
+                                ${bid['投標倍數'] ? `<div class="data-item"><div class="data-label">投標倍數</div><div class="data-value">${bid['投標倍數']} 倍</div></div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // 歷史紀錄
+            if (historyCBs.length > 0) {
+                html += `<div class="section-title">📜 歷史發行紀錄（${historyCBs.length} 檔）</div>`;
+                html += '<table style="width: 100%; border-collapse: collapse;">';
+                html += '<tr style="background: #f5f5f5;"><th style="padding: 10px; text-align: left;">代號</th><th style="padding: 10px; text-align: left;">名稱</th><th style="padding: 10px; text-align: right;">掛牌最高</th><th style="padding: 10px; text-align: right;">掛牌最低</th></tr>';
+                historyCBs.slice(0, 10).forEach(cb => {
+                    html += `<tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px;">${cb['代號'] || '-'}</td>
+                        <td style="padding: 10px;">${cb['名稱'] || '-'}</td>
+                        <td style="padding: 10px; text-align: right;">${cb['掛牌最高'] || '-'}</td>
+                        <td style="padding: 10px; text-align: right;">${cb['掛牌最低'] || '-'}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+            }
+            
+            content.innerHTML = html;
+        }
+
+        // 綁定維度按鈕
+        function bindDimensionButtons() {
+            const buttons = document.querySelectorAll('.dimension-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 移除所有 active
+                    buttons.forEach(b => b.classList.remove('active'));
+                    // 加上當前 active
+                    this.classList.add('active');
+                    
+                    const dim = this.getAttribute('data-dim');
+                    
+                    if (dim === 'overview') {
+                        showOverview(currentCompany);
+                    } else if (dim === 'cb') {
+                        showCB(currentCompany);
+                    } else {
+                        document.getElementById('contentArea').innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-icon">🚧</div>
+                                <div>此功能開發中...</div>
+                            </div>
+                        `;
+                    }
+                });
+            });
+        }
+
+        // 頁面載入時執行
+        window.addEventListener('load', loadData);
+    </script>
+</body>
+</html>
