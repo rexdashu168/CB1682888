@@ -43,6 +43,24 @@
             font-size: 1.1em;
         }
 
+        .error-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .error-box h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .error-box p {
+            color: #856404;
+            line-height: 1.6;
+        }
+
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -56,11 +74,6 @@
             border-radius: 15px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
             text-align: center;
-            transition: transform 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
         }
 
         .stat-card h3 {
@@ -87,6 +100,7 @@
             gap: 10px;
             margin-bottom: 25px;
             border-bottom: 2px solid #f0f0f0;
+            flex-wrap: wrap;
         }
 
         .tab-button {
@@ -118,12 +132,6 @@
             border: 2px solid #e0e0e0;
             border-radius: 10px;
             font-size: 1.1em;
-            transition: border-color 0.3s;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: #667eea;
         }
 
         .search-button {
@@ -134,11 +142,6 @@
             border-radius: 10px;
             font-size: 1.1em;
             cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .search-button:hover {
-            background: #5568d3;
         }
 
         .quick-links {
@@ -152,15 +155,7 @@
             background: #f0f0f0;
             border: none;
             border-radius: 20px;
-            color: #666;
             cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9em;
-        }
-
-        .quick-link:hover {
-            background: #667eea;
-            color: white;
         }
 
         .results-section {
@@ -183,12 +178,6 @@
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 20px;
-            transition: all 0.3s;
-        }
-
-        .result-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.1);
         }
 
         .result-header {
@@ -211,7 +200,6 @@
             background: #667eea;
             color: white;
             border-radius: 20px;
-            font-size: 0.9em;
         }
 
         .result-section {
@@ -250,155 +238,72 @@
             font-weight: bold;
         }
 
-        .result-value.positive {
-            color: #e74c3c;
-        }
-
-        .result-value.negative {
-            color: #27ae60;
-        }
-
-        .report-list {
-            list-style: none;
-        }
-
-        .report-item {
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .cb-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .cb-table th {
-            background: #667eea;
-            color: white;
-            padding: 15px;
-            text-align: left;
-        }
-
-        .cb-table td {
-            padding: 15px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .cb-table tr:hover {
-            background: #f9f9f9;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 50px;
-            color: #999;
-        }
-
-        .empty-state svg {
-            width: 150px;
-            height: 150px;
-            margin-bottom: 20px;
-            opacity: 0.3;
+        .debug-info {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
         }
 
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 1.8em;
             }
-
             .search-box {
                 flex-direction: column;
             }
-
-            .result-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .filter-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid #f0f0f0;
-        }
-
-        .filter-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .filter-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .filter-label {
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 5px;
-        }
-
-        .filter-select {
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1em;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 標題 -->
         <div class="header">
             <h1>🤖 Rex大叔台股AI智能查詢系統</h1>
             <p>整合產業研究、券商報告、可轉債三大資料庫</p>
         </div>
 
-        <!-- 統計資訊 -->
+        <div class="error-box" id="error-message" style="display:none;">
+            <h3>⚠️ 資料載入失敗</h3>
+            <p id="error-text"></p>
+        </div>
+
         <div class="stats">
             <div class="stat-card">
-                <h3 id="stat-companies">2,277</h3>
+                <h3 id="stat-companies">載入中...</h3>
                 <p>上市櫃公司</p>
             </div>
             <div class="stat-card">
-                <h3 id="stat-reports">66</h3>
+                <h3 id="stat-reports">載入中...</h3>
                 <p>券商研究報告</p>
             </div>
             <div class="stat-card">
-                <h3 id="stat-cb">2,232</h3>
+                <h3 id="stat-cb">載入中...</h3>
                 <p>可轉債檔數</p>
             </div>
             <div class="stat-card">
-                <h3 id="stat-market">338</h3>
+                <h3 id="stat-market">載入中...</h3>
                 <p>CB市場行情</p>
             </div>
         </div>
 
-        <!-- 搜尋區 -->
         <div class="search-section">
-            <!-- 功能標籤 -->
             <div class="search-tabs">
-                <button class="tab-button active" onclick="switchTab('company')">
+                <button class="tab-button active" onclick="switchTab('company', event)">
                     📊 公司查詢
                 </button>
-                <button class="tab-button" onclick="switchTab('cb')">
+                <button class="tab-button" onclick="switchTab('cb', event)">
                     💰 CB查詢
                 </button>
-                <button class="tab-button" onclick="switchTab('industry')">
+                <button class="tab-button" onclick="switchTab('industry', event)">
                     📈 產業分析
                 </button>
-                <button class="tab-button" onclick="switchTab('scan')">
+                <button class="tab-button" onclick="switchTab('scan', event)">
                     🎯 機會掃描
                 </button>
             </div>
 
-            <!-- 公司查詢 -->
             <div id="tab-company" class="tab-content">
                 <div class="search-box">
                     <input type="text" 
@@ -417,109 +322,49 @@
                     <button class="quick-link" onclick="quickSearch('2454')">聯發科</button>
                     <button class="quick-link" onclick="quickSearch('2412')">中華電</button>
                     <button class="quick-link" onclick="quickSearch('2882')">國泰金</button>
-                    <button class="quick-link" onclick="quickSearch('2886')">兆豐金</button>
-                </div>
-            </div>
-
-            <!-- CB查詢 -->
-            <div id="tab-cb" class="tab-content" style="display:none;">
-                <div class="search-box">
-                    <input type="text" 
-                           id="cb-input" 
-                           class="search-input" 
-                           placeholder="輸入CB名稱或代號 (例如: 鴻海一)"
-                           onkeypress="if(event.key==='Enter') searchCB()">
-                    <button class="search-button" onclick="searchCB()">
-                        🔍 查詢
-                    </button>
-                </div>
-            </div>
-
-            <!-- 產業分析 -->
-            <div id="tab-industry" class="tab-content" style="display:none;">
-                <div class="search-box">
-                    <input type="text" 
-                           id="industry-input" 
-                           class="search-input" 
-                           placeholder="輸入產業名稱 (例如: 半導體、食品、金融)"
-                           onkeypress="if(event.key==='Enter') searchIndustry()">
-                    <button class="search-button" onclick="searchIndustry()">
-                        🔍 查詢
-                    </button>
-                </div>
-                <div class="quick-links">
-                    <span style="color: #666; margin-right: 10px;">熱門產業：</span>
-                    <button class="quick-link" onclick="searchIndustryDirect('半導體')">半導體</button>
-                    <button class="quick-link" onclick="searchIndustryDirect('電子零組件')">電子零組件</button>
-                    <button class="quick-link" onclick="searchIndustryDirect('金融')">金融</button>
-                    <button class="quick-link" onclick="searchIndustryDirect('塑膠')">塑膠</button>
-                    <button class="quick-link" onclick="searchIndustryDirect('食品')">食品</button>
-                </div>
-            </div>
-
-            <!-- 機會掃描 -->
-            <div id="tab-scan" class="tab-content" style="display:none;">
-                <div class="filter-section">
-                    <div class="filter-group">
-                        <div class="filter-item">
-                            <label class="filter-label">溢折價篩選</label>
-                            <select id="premium-filter" class="filter-select">
-                                <option value="all">全部</option>
-                                <option value="discount">折價（<0%）</option>
-                                <option value="low">低溢價（0-10%）</option>
-                                <option value="medium">中溢價（10-30%）</option>
-                                <option value="high">高溢價（>30%）</option>
-                            </select>
-                        </div>
-                        <div class="filter-item">
-                            <label class="filter-label">產業篩選</label>
-                            <select id="industry-filter" class="filter-select">
-                                <option value="all">全部產業</option>
-                            </select>
-                        </div>
-                        <div class="filter-item">
-                            <label class="filter-label">顯示數量</label>
-                            <select id="count-filter" class="filter-select">
-                                <option value="10">10筆</option>
-                                <option value="20" selected>20筆</option>
-                                <option value="50">50筆</option>
-                                <option value="100">100筆</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button class="search-button" onclick="scanOpportunities()" style="width: 100%;">
-                        🎯 開始掃描CB投資機會
-                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- 結果顯示區 -->
         <div class="results-section" id="results">
-            <div class="empty-state">
-                <svg viewBox="0 0 200 200" fill="currentColor">
-                    <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" stroke-width="4"/>
-                    <path d="M70 90 Q100 70 130 90" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-                    <circle cx="75" cy="80" r="8"/>
-                    <circle cx="125" cy="80" r="8"/>
-                </svg>
-                <h2>請選擇功能開始查詢</h2>
-                <p>可以查詢公司資訊、CB投資機會、產業分析</p>
+            <div class="loading">
+                <p>🔄 正在載入資料...</p>
+                <div id="debug-info" class="debug-info" style="margin-top: 20px;"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // 全域變數
         let stockData = null;
-        let currentTab = 'company';
+        
+        // 除錯訊息
+        function addDebugInfo(message) {
+            const debugDiv = document.getElementById('debug-info');
+            if (debugDiv) {
+                const time = new Date().toLocaleTimeString();
+                debugDiv.innerHTML += `[${time}] ${message}<br>`;
+            }
+            console.log(message);
+        }
 
-        // 載入資料
+        // 載入資料 - 專門針對 GitHub Pages 優化
         async function loadData() {
+            addDebugInfo('開始載入資料...');
+            
             try {
-                const response = await fetch('stock_ai_data_full.json');
+                // GitHub Pages 的正確路徑
+                const jsonPath = './stock_ai_data_full.json';
+                addDebugInfo(`嘗試載入: ${jsonPath}`);
+                
+                const response = await fetch(jsonPath);
+                addDebugInfo(`回應狀態: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 stockData = await response.json();
-                console.log('資料載入成功！', stockData);
+                addDebugInfo('✅ JSON 解析成功！');
                 
                 // 更新統計數字
                 document.getElementById('stat-companies').textContent = stockData.industry_database.length.toLocaleString();
@@ -527,60 +372,67 @@
                 document.getElementById('stat-cb').textContent = stockData.cb_basic.length.toLocaleString();
                 document.getElementById('stat-market').textContent = stockData.cb_market.length;
                 
-                // 載入產業選項
-                loadIndustryOptions();
+                addDebugInfo(`✅ 資料載入完成！公司數: ${stockData.industry_database.length}`);
+                
+                // 隱藏載入訊息
+                document.getElementById('results').innerHTML = '<div class="loading">✅ 資料載入成功！請輸入查詢條件</div>';
+                
+                // 隱藏錯誤訊息
+                document.getElementById('error-message').style.display = 'none';
+                
             } catch (error) {
+                addDebugInfo(`❌ 錯誤: ${error.message}`);
                 console.error('資料載入失敗:', error);
-                showResults('<div class="empty-state"><h2>⚠️ 資料載入失敗</h2><p>請確認 stock_ai_data_full.json 檔案位置</p></div>');
+                showError(error);
             }
         }
 
-        // 載入產業選項
-        function loadIndustryOptions() {
-            const industries = new Set();
-            stockData.cb_market.forEach(cb => {
-                if (cb['產業']) industries.add(cb['產業']);
-            });
+        function showError(error) {
+            const errorBox = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
             
-            const select = document.getElementById('industry-filter');
-            Array.from(industries).sort().forEach(industry => {
-                const option = document.createElement('option');
-                option.value = industry;
-                option.textContent = industry;
-                select.appendChild(option);
-            });
+            errorText.innerHTML = `
+                <strong>載入失敗！錯誤訊息：</strong><br>
+                ${error.message}<br><br>
+                
+                <strong>請確認：</strong><br>
+                1. stock_ai_data_full.json 檔案已上傳到 GitHub<br>
+                2. 檔案與 index.html 在同一目錄<br>
+                3. 檔案名稱完全正確（區分大小寫）<br>
+                4. GitHub Pages 已啟用並部署完成<br><br>
+                
+                <strong>測試連結：</strong><br>
+                <a href="./stock_ai_data_full.json" target="_blank">點此測試 JSON 檔案是否可訪問</a>
+            `;
+            
+            errorBox.style.display = 'block';
+            
+            // 更新統計為錯誤訊息
+            document.getElementById('stat-companies').textContent = '錯誤';
+            document.getElementById('stat-reports').textContent = '錯誤';
+            document.getElementById('stat-cb').textContent = '錯誤';
+            document.getElementById('stat-market').textContent = '錯誤';
+            
+            document.getElementById('results').innerHTML = '<div class="loading">❌ 資料載入失敗，請查看上方錯誤訊息</div>';
         }
 
-        // 切換標籤
-        function switchTab(tab) {
-            currentTab = tab;
-            
-            // 更新按鈕狀態
+        function switchTab(tab, event) {
+            // 移除所有 active 類別
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('active');
             });
+            // 添加到點擊的按鈕
             event.target.classList.add('active');
-            
-            // 顯示對應內容
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.style.display = 'none';
-            });
-            document.getElementById(`tab-${tab}`).style.display = 'block';
-            
-            // 清空結果
-            showResults('<div class="empty-state"><h2>請輸入查詢條件</h2></div>');
         }
 
-        // 快速查詢
         function quickSearch(code) {
             document.getElementById('company-input').value = code;
             searchCompany();
         }
 
-        // 查詢公司
         function searchCompany() {
             if (!stockData) {
-                alert('資料尚未載入完成，請稍候...');
+                alert('資料尚未載入，請稍候或重新整理頁面');
                 return;
             }
 
@@ -590,19 +442,19 @@
                 return;
             }
 
-            showResults('<div class="loading">🔍 查詢中...</div>');
+            document.getElementById('results').innerHTML = '<div class="loading">🔍 查詢中...</div>';
 
             // 搜尋公司
             let company = null;
             for (let c of stockData.industry_database) {
-                if (c['代號'] == input || c['公司名稱'].includes(input)) {
+                if (c['代號'] == input || (c['公司名稱'] && c['公司名稱'].includes(input))) {
                     company = c;
                     break;
                 }
             }
 
             if (!company) {
-                showResults(`<div class="empty-state"><h2>❌ 找不到「${input}」</h2><p>請檢查股票代號或公司名稱</p></div>`);
+                document.getElementById('results').innerHTML = `<div class="loading">❌ 找不到「${input}」相關公司</div>`;
                 return;
             }
 
@@ -613,12 +465,10 @@
             const reports = stockData.research_reports.filter(r => r['股號'] == stockCode);
             const cbs = stockData.cb_basic.filter(cb => cb['股票代號'] == stockCode);
 
-            // 顯示結果
-            displayCompanyResult(company, finance, product, reports, cbs);
+            displayResult(company, finance, product, reports, cbs);
         }
 
-        // 顯示公司結果
-        function displayCompanyResult(company, finance, product, reports, cbs) {
+        function displayResult(company, finance, product, reports, cbs) {
             let html = `
                 <div class="result-card">
                     <div class="result-header">
@@ -657,7 +507,7 @@
                         <div class="result-grid">
                             <div class="result-item">
                                 <div class="result-label">營收YoY</div>
-                                <div class="result-value positive">${finance['營收YoY'] || 'N/A'}</div>
+                                <div class="result-value">${finance['營收YoY'] || 'N/A'}</div>
                             </div>
                             <div class="result-item">
                                 <div class="result-label">毛利率</div>
@@ -667,23 +517,7 @@
                                 <div class="result-label">EPS</div>
                                 <div class="result-value">${finance['EPS'] || 'N/A'}</div>
                             </div>
-                            ${finance['4Q25指引'] ? `<div class="result-item"><div class="result-label">4Q25指引</div><div class="result-value">${finance['4Q25指引']}</div></div>` : ''}
                         </div>
-                    </div>
-                `;
-            }
-
-            if (product) {
-                html += `
-                    <div class="result-section">
-                        <h3>📦 產品結構</h3>
-                        <div class="result-grid">
-                            ${product['主要產品1'] ? `<div class="result-item"><div class="result-label">主要產品1</div><div class="result-value">${product['主要產品1']}</div><div style="color: #888; margin-top: 5px;">${product['佔比/表現1'] || ''}</div></div>` : ''}
-                            ${product['主要產品2'] ? `<div class="result-item"><div class="result-label">主要產品2</div><div class="result-value">${product['主要產品2']}</div><div style="color: #888; margin-top: 5px;">${product['佔比/表現2'] || ''}</div></div>` : ''}
-                            ${product['主要產品3'] ? `<div class="result-item"><div class="result-label">主要產品3</div><div class="result-value">${product['主要產品3']}</div><div style="color: #888; margin-top: 5px;">${product['佔比/表現3'] || ''}</div></div>` : ''}
-                        </div>
-                        ${product['關鍵成長動能'] ? `<div style="margin-top: 15px; padding: 15px; background: #f9f9f9; border-radius: 10px;"><strong>關鍵成長動能：</strong>${product['關鍵成長動能']}</div>` : ''}
-                        ${product['2026展望'] ? `<div style="margin-top: 10px; padding: 15px; background: #f9f9f9; border-radius: 10px;"><strong>2026展望：</strong>${product['2026展望']}</div>` : ''}
                     </div>
                 `;
             }
@@ -692,368 +526,47 @@
                 html += `
                     <div class="result-section">
                         <h3>📊 券商研究報告 (${reports.length}篇)</h3>
-                        <ul class="report-list">
                 `;
                 reports.slice(0, 5).forEach(report => {
                     html += `
-                        <li class="report-item">
-                            <div>
-                                <strong>${report['券商']}</strong> - ${report['報告類型']}
-                                <div style="color: #888; font-size: 0.9em;">${report['日期']}</div>
-                            </div>
-                            <div class="result-badge" style="background: #f39c12;">${report['重要性']}</div>
-                        </li>
+                        <div style="padding: 15px; background: #f9f9f9; border-radius: 10px; margin-bottom: 10px;">
+                            <strong>${report['券商']}</strong> - ${report['報告類型']}<br>
+                            <span style="color: #888;">${report['日期']}</span>
+                        </div>
                     `;
                 });
-                html += `</ul></div>`;
+                html += `</div>`;
             }
 
             if (cbs && cbs.length > 0) {
                 html += `
                     <div class="result-section">
                         <h3>💎 可轉債 (${cbs.length}檔)</h3>
-                        <table class="cb-table">
-                            <thead>
-                                <tr>
-                                    <th>名稱</th>
-                                    <th>代號</th>
-                                    <th>轉換價格</th>
-                                    <th>發行規模</th>
-                                    <th>信用擔保</th>
-                                </tr>
-                            </thead>
-                            <tbody>
                 `;
                 cbs.forEach(cb => {
                     html += `
-                        <tr>
-                            <td><strong>${cb['名稱']}</strong></td>
-                            <td>${cb['CB代號']}</td>
-                            <td>${cb['轉換價格']}</td>
-                            <td>${cb['發行規模']}</td>
-                            <td>${cb['信用擔保']}</td>
-                        </tr>
+                        <div style="padding: 15px; background: #f9f9f9; border-radius: 10px; margin-bottom: 10px;">
+                            <strong>${cb['名稱']}</strong> (${cb['CB代號']})<br>
+                            轉換價: ${cb['轉換價格']} | 規模: ${cb['發行規模']}億
+                        </div>
                     `;
                 });
-                html += `</tbody></table></div>`;
+                html += `</div>`;
             }
 
             html += '</div>';
-            showResults(html);
-        }
-
-        // 查詢CB
-        function searchCB() {
-            if (!stockData) {
-                alert('資料尚未載入完成，請稍候...');
-                return;
-            }
-
-            const input = document.getElementById('cb-input').value.trim();
-            if (!input) {
-                alert('請輸入CB名稱或代號');
-                return;
-            }
-
-            showResults('<div class="loading">🔍 查詢中...</div>');
-
-            // 搜尋CB
-            const cb = stockData.cb_market.find(c => 
-                c['名稱  '] && c['名稱  '].includes(input) || 
-                c['代碼'] == input
-            );
-
-            if (!cb) {
-                showResults(`<div class="empty-state"><h2>❌ 找不到「${input}」</h2><p>請檢查CB名稱或代號</p></div>`);
-                return;
-            }
-
-            displayCBResult(cb);
-        }
-
-        // 顯示CB結果
-        function displayCBResult(cb) {
-            const premium = parseFloat(cb['溢(折)價%']) || 0;
-            const premiumClass = premium < 0 ? 'negative' : 'positive';
-
-            let html = `
-                <div class="result-card">
-                    <div class="result-header">
-                        <div class="result-title">${cb['名稱  ']}</div>
-                        <div class="result-badge">${cb['產業']}</div>
-                    </div>
-
-                    <div class="result-section">
-                        <h3>💰 市場行情</h3>
-                        <div class="result-grid">
-                            <div class="result-item">
-                                <div class="result-label">CB收盤價</div>
-                                <div class="result-value">${cb['CB收盤價']}</div>
-                            </div>
-                            <div class="result-item">
-                                <div class="result-label">股價</div>
-                                <div class="result-value">${cb['股價']}</div>
-                            </div>
-                            <div class="result-item">
-                                <div class="result-label">轉換價格</div>
-                                <div class="result-value">${cb['轉換價格']}</div>
-                            </div>
-                            <div class="result-item">
-                                <div class="result-label">溢(折)價</div>
-                                <div class="result-value ${premiumClass}">${premium.toFixed(2)}%</div>
-                            </div>
-                            <div class="result-item">
-                                <div class="result-label">YTM</div>
-                                <div class="result-value">${parseFloat(cb['YTM']).toFixed(4)}%</div>
-                            </div>
-                            <div class="result-item">
-                                <div class="result-label">剩餘轉換比率</div>
-                                <div class="result-value">${cb['剩餘未轉換比率%']}%</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="result-section">
-                        <h3>📅 重要日期</h3>
-                        <div class="result-grid">
-                            <div class="result-item">
-                                <div class="result-label">發行日</div>
-                                <div class="result-value">${cb['發行日']}</div>
-                            </div>
-                            <div class="result-item">
-                                <div class="result-label">最近賣回日</div>
-                                <div class="result-value">${cb['最近賣回日'] || 'N/A'}</div>
-                            </div>
-                            <div class="result-item">
-                                <div class="result-label">到期日</div>
-                                <div class="result-value">${cb['到期日']}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            showResults(html);
-        }
-
-        // 查詢產業
-        function searchIndustry() {
-            const input = document.getElementById('industry-input').value.trim();
-            if (input) {
-                searchIndustryDirect(input);
-            }
-        }
-
-        function searchIndustryDirect(industry) {
-            if (!stockData) {
-                alert('資料尚未載入完成，請稍候...');
-                return;
-            }
-
-            showResults('<div class="loading">🔍 分析中...</div>');
-
-            // 找出該產業的公司
-            const companies = stockData.industry_database.filter(c => 
-                c['產業分類'] && c['產業分類'].includes(industry)
-            );
-
-            if (companies.length === 0) {
-                showResults(`<div class="empty-state"><h2>❌ 找不到「${industry}」產業</h2></div>`);
-                return;
-            }
-
-            // 找出該產業的CB
-            const cbs = stockData.cb_market.filter(cb => 
-                cb['產業'] && cb['產業'].includes(industry)
-            );
-
-            displayIndustryResult(industry, companies, cbs);
-        }
-
-        // 顯示產業結果
-        function displayIndustryResult(industry, companies, cbs) {
-            let html = `
-                <div class="result-card">
-                    <div class="result-header">
-                        <div class="result-title">${industry} 產業分析</div>
-                        <div class="result-badge">${companies.length} 家公司</div>
-                    </div>
-
-                    <div class="result-section">
-                        <h3>🏢 代表公司 (前20家)</h3>
-                        <table class="cb-table">
-                            <thead>
-                                <tr>
-                                    <th>代號</th>
-                                    <th>公司名稱</th>
-                                    <th>股本(億)</th>
-                                    <th>市值(億)</th>
-                                    <th>產業地位</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-            `;
-
-            companies.slice(0, 20).forEach(c => {
-                html += `
-                    <tr style="cursor: pointer;" onclick="quickSearch('${c['代號']}')">
-                        <td><strong>${c['代號']}</strong></td>
-                        <td>${c['公司名稱']}</td>
-                        <td>${c['股本(億)'] || 'N/A'}</td>
-                        <td>${c['市值(億)'] || 'N/A'}</td>
-                        <td>${c['產業地位說明'] || 'N/A'}</td>
-                    </tr>
-                `;
-            });
-
-            html += `</tbody></table></div>`;
-
-            if (cbs.length > 0) {
-                html += `
-                    <div class="result-section">
-                        <h3>💎 相關CB (${cbs.length}檔)</h3>
-                        <table class="cb-table">
-                            <thead>
-                                <tr>
-                                    <th>CB名稱</th>
-                                    <th>股價</th>
-                                    <th>轉換價</th>
-                                    <th>溢折價</th>
-                                    <th>YTM</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
-
-                cbs.forEach(cb => {
-                    const premium = parseFloat(cb['溢(折)價%']) || 0;
-                    const premiumClass = premium < 0 ? 'negative' : 'positive';
-                    html += `
-                        <tr>
-                            <td><strong>${cb['名稱  ']}</strong></td>
-                            <td>${cb['股價']}</td>
-                            <td>${cb['轉換價格']}</td>
-                            <td class="${premiumClass}">${premium.toFixed(2)}%</td>
-                            <td>${parseFloat(cb['YTM']).toFixed(4)}%</td>
-                        </tr>
-                    `;
-                });
-
-                html += `</tbody></table></div>`;
-            }
-
-            html += '</div>';
-            showResults(html);
-        }
-
-        // 掃描投資機會
-        function scanOpportunities() {
-            if (!stockData) {
-                alert('資料尚未載入完成，請稍候...');
-                return;
-            }
-
-            showResults('<div class="loading">🎯 掃描中...</div>');
-
-            const premiumFilter = document.getElementById('premium-filter').value;
-            const industryFilter = document.getElementById('industry-filter').value;
-            const count = parseInt(document.getElementById('count-filter').value);
-
-            // 篩選CB
-            let filtered = stockData.cb_market.filter(cb => {
-                const premium = parseFloat(cb['溢(折)價%']) || 999;
-                
-                // 溢折價篩選
-                if (premiumFilter === 'discount' && premium >= 0) return false;
-                if (premiumFilter === 'low' && (premium < 0 || premium > 10)) return false;
-                if (premiumFilter === 'medium' && (premium < 10 || premium > 30)) return false;
-                if (premiumFilter === 'high' && premium <= 30) return false;
-                
-                // 產業篩選
-                if (industryFilter !== 'all' && cb['產業'] !== industryFilter) return false;
-                
-                return true;
-            });
-
-            // 按溢折價排序
-            filtered.sort((a, b) => {
-                const premiumA = parseFloat(a['溢(折)價%']) || 999;
-                const premiumB = parseFloat(b['溢(折)價%']) || 999;
-                return premiumA - premiumB;
-            });
-
-            displayScanResult(filtered.slice(0, count));
-        }
-
-        // 顯示掃描結果
-        function displayScanResult(opportunities) {
-            if (opportunities.length === 0) {
-                showResults('<div class="empty-state"><h2>😅 沒有符合條件的CB</h2><p>請調整篩選條件</p></div>');
-                return;
-            }
-
-            let html = `
-                <div class="result-card">
-                    <div class="result-header">
-                        <div class="result-title">CB投資機會掃描</div>
-                        <div class="result-badge">找到 ${opportunities.length} 個機會</div>
-                    </div>
-
-                    <div class="result-section">
-                        <table class="cb-table">
-                            <thead>
-                                <tr>
-                                    <th>排名</th>
-                                    <th>CB名稱</th>
-                                    <th>產業</th>
-                                    <th>股價</th>
-                                    <th>轉換價</th>
-                                    <th>溢折價</th>
-                                    <th>YTM</th>
-                                    <th>剩餘比率</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-            `;
-
-            opportunities.forEach((cb, index) => {
-                const premium = parseFloat(cb['溢(折)價%']) || 0;
-                const premiumClass = premium < 0 ? 'negative' : 'positive';
-                html += `
-                    <tr>
-                        <td><strong>${index + 1}</strong></td>
-                        <td><strong>${cb['名稱  ']}</strong></td>
-                        <td>${cb['產業']}</td>
-                        <td>${cb['股價']}</td>
-                        <td>${cb['轉換價格']}</td>
-                        <td class="${premiumClass}"><strong>${premium.toFixed(2)}%</strong></td>
-                        <td>${parseFloat(cb['YTM']).toFixed(4)}%</td>
-                        <td>${cb['剩餘未轉換比率%']}%</td>
-                    </tr>
-                `;
-            });
-
-            html += `
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-
-            showResults(html);
-        }
-
-        // 顯示結果
-        function showResults(html) {
             document.getElementById('results').innerHTML = html;
-            // 滾動到結果區
-            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         // 頁面載入時執行
-        window.onload = function() {
+        window.addEventListener('DOMContentLoaded', function() {
+            addDebugInfo('頁面載入完成');
+            addDebugInfo(`當前網址: ${window.location.href}`);
             loadData();
-        };
+        });
     </script>
 </body>
 </html>
+
+
+
