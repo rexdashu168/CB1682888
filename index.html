@@ -580,138 +580,168 @@
 
     <script>
 
-        // 資料將從外部 data.json 載入
+        // 全域資料變數
         let RESEARCH_DATA = null;
+        let dataLoaded = false;
         
-        // 載入資料
-        async function loadData() {
+        // 載入外部資料
+        async function loadExternalData() {
             try {
-                document.getElementById('loading').style.display = 'flex';
+                console.log('開始載入 data.json...');
                 const response = await fetch('data.json');
+                
                 if (!response.ok) {
-                    throw new Error('無法載入資料檔案');
+                    throw new Error('HTTP error! status: ' + response.status);
                 }
+                
                 const rawData = await response.json();
+                console.log('✅ data.json 載入成功');
                 
                 // 轉換資料格式
-                RESEARCH_DATA = convertDataFormat(rawData);
+                RESEARCH_DATA = convertRawData(rawData);
+                dataLoaded = true;
                 
-                document.getElementById('loading').style.display = 'none';
-                console.log('✅ 資料載入完成');
+                console.log('✅ 資料轉換完成');
+                console.log('   公司數:', Object.keys(RESEARCH_DATA.companies).length);
+                console.log('   報告數:', RESEARCH_DATA.stats.total_reports);
+                
+                // 隱藏載入畫面
+                const loading = document.getElementById('loading');
+                if (loading) {
+                    loading.style.display = 'none';
+                }
+                
+                return true;
+                
             } catch (error) {
                 console.error('❌ 載入失敗:', error);
-                document.getElementById('loading').innerHTML = `
-                    <div style="color: red; text-align: center;">
-                        <div style="font-size: 24px; margin-bottom: 10px;">❌</div>
-                        <div>資料載入失敗</div>
-                        <div style="font-size: 12px; margin-top: 5px;">請確認 data.json 是否存在</div>
-                    </div>
-                `;
+                const loading = document.getElementById('loading');
+                if (loading) {
+                    loading.innerHTML = `
+                        <div style="text-align: center; color: red;">
+                            <div style="font-size: 48px;">❌</div>
+                            <div style="margin-top: 10px;">資料載入失敗</div>
+                            <div style="font-size: 14px; margin-top: 5px; color: #666;">
+                                ${error.message}
+                            </div>
+                            <div style="font-size: 12px; margin-top: 10px; color: #999;">
+                                請確認 data.json 檔案是否存在於同一目錄
+                            </div>
+                        </div>
+                    `;
+                }
+                return false;
             }
         }
         
-        // 轉換資料格式
-        function convertDataFormat(rawData) {
+        // 轉換原始資料格式
+        function convertRawData(rawData) {
             const converted = {
                 stats: {
-                    total_companies: rawData.companies.length,
+                    total_companies: 0,
                     companies_with_reports: 0,
                     total_reports: rawData.reports.length,
-                    cb_stats: {
-                        companies_with_cb: 0,
-                        current_cb_count: rawData.cb.current.length,
-                        history_cb_count: rawData.cb.history.length,
-                        bid_cb_count: rawData.cb.bid.length
-                    }
+                    total_industries: 0
                 },
                 companies: {},
                 reports_by_company: {}
             };
             
-            // 處理公司資料
+            // 轉換公司資料
+            const industries = new Set();
             rawData.companies.forEach(company => {
                 const code = company['代號'] || company['股票代號'];
-                if (code) {
-                    converted.companies[code] = {
-                        stock_code: code,
-                        company_name: company['公司名稱'] || company['公司簡稱'],
-                        market: company['市場分類'],
-                        industry: company['產業分類'],
-                        chairman: company['董事長'],
-                        ceo: company['總經理'],
-                        capital: company['股本(億)'],
-                        market_value: company['市值(億)'],
-                        industry_position: company['產業地位說明'],
-                        price: company['成交'],
-                        volume: company['成交量(千股)']
-                    };
+                if (!code) return;
+                
+                converted.companies[code] = {
+                    stock_code: code,
+                    company_name: company['公司名稱'] || company['公司簡稱'],
+                    market: company['市場分類'],
+                    industry: company['產業分類'],
+                    industry_detail: company['產業細分'],
+                    industry_position: company['產業地位說明'],
+                    chairman: company['董事長'],
+                    ceo: company['總經理'],
+                    capital: company['股本(億)'],
+                    market_value: company['市值(億)'],
+                    price: company['成交'],
+                    volume: company['成交量(千股)']
+                };
+                
+                if (company['產業分類']) {
+                    industries.add(company['產業分類']);
                 }
             });
             
-            // 處理研究報告
-            const reportsByCompany = {};
+            converted.stats.total_companies = Object.keys(converted.companies).length;
+            converted.stats.total_industries = industries.size;
+            
+            // 轉換報告資料
             rawData.reports.forEach(report => {
                 const code = report['股票代號'];
-                if (code) {
-                    if (!reportsByCompany[code]) {
-                        reportsByCompany[code] = [];
+                if (!code) return;
+                
+                if (!converted.reports_by_company[code]) {
+                    converted.reports_by_company[code] = [];
+                }
+                converted.reports_by_company[code].push(report);
+                
+                // 將報告附加到公司
+                if (converted.companies[code]) {
+                    if (!converted.companies[code].reports) {
+                        converted.companies[code].reports = [];
                         converted.stats.companies_with_reports++;
                     }
-                    reportsByCompany[code].push(report);
+                    converted.companies[code].reports.push(report);
                 }
             });
             
-            // 整合報告到公司
-            Object.keys(reportsByCompany).forEach(code => {
-                if (converted.companies[code]) {
-                    converted.companies[code].reports = reportsByCompany[code];
-                    converted.reports_by_company[code] = reportsByCompany[code];
-                }
-            });
-            
-            // 處理 CB 資料
+            // 轉換 CB 資料
+            const cbStats = { companies_with_cb: 0 };
             const cbByCompany = {};
             
-            // 目前掛牌
+            // 處理目前掛牌 CB
             rawData.cb.current.forEach(cb => {
-                const code = cb['轉換標的代碼'] ? cb['轉換標的代碼'].toString() : null;
-                if (code) {
-                    if (!cbByCompany[code]) {
-                        cbByCompany[code] = { has_cb: true, current: [], history: [], bid: [] };
-                        converted.stats.cb_stats.companies_with_cb++;
-                    }
-                    cbByCompany[code].current.push(cb);
+                const code = cb['轉換標的代碼'] ? String(cb['轉換標的代碼']) : null;
+                if (!code) return;
+                
+                if (!cbByCompany[code]) {
+                    cbByCompany[code] = { has_cb: true, current_cb: [], history_cb: [], bid_cb: [] };
+                    cbStats.companies_with_cb++;
                 }
+                cbByCompany[code].current_cb.push(cb);
             });
             
-            // 歷史
+            // 處理歷史 CB
             rawData.cb.history.forEach(cb => {
-                const code = cb['股票代號'] ? cb['股票代號'].toString() : null;
-                if (code) {
-                    if (!cbByCompany[code]) {
-                        cbByCompany[code] = { has_cb: true, current: [], history: [], bid: [] };
-                    }
-                    cbByCompany[code].history.push(cb);
+                const code = cb['股票代號'] ? String(cb['股票代號']) : null;
+                if (!code) return;
+                
+                if (!cbByCompany[code]) {
+                    cbByCompany[code] = { has_cb: true, current_cb: [], history_cb: [], bid_cb: [] };
                 }
+                cbByCompany[code].history_cb.push(cb);
             });
             
-            // 競拍
+            // 處理競拍 CB
             rawData.cb.bid.forEach(cb => {
-                const code = cb['股票代號'] ? cb['股票代號'].toString() : null;
-                if (code) {
-                    if (!cbByCompany[code]) {
-                        cbByCompany[code] = { has_cb: true, current: [], history: [], bid: [] };
-                    }
-                    cbByCompany[code].bid.push(cb);
+                const code = cb['股票代號'] ? String(cb['股票代號']) : null;
+                if (!code) return;
+                
+                if (!cbByCompany[code]) {
+                    cbByCompany[code] = { has_cb: true, current_cb: [], history_cb: [], bid_cb: [] };
                 }
+                cbByCompany[code].bid_cb.push(cb);
             });
             
-            // 整合 CB 到公司
+            // 附加 CB 到公司
             Object.keys(cbByCompany).forEach(code => {
                 if (converted.companies[code]) {
                     converted.companies[code].cb_info = cbByCompany[code];
                 }
             });
+            
+            converted.stats.cb_stats = cbStats;
             
             return converted;
         }
